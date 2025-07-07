@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5a6fd8;
+        }
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .results.show {
+            display: block;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        .recommendation {
+            background: #e8f4f8;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #17a2b8;
+        }
+        .recommendation h3 {
+            margin: 0 0 10px 0;
+            color: #0c5460;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Marketplace Analyzer</h1>
+        
+        <form id="analyzerForm">
+            <div class="form-group">
+                <label for="productUrl">Link do produktu:</label>
+                <input type="url" id="productUrl" placeholder="https://amazon.de/dp/..." required>
+            </div>
+            
+            <div class="form-group">
+                <label for="keyword">Główne słowo kluczowe:</label>
+                <input type="text" id="keyword" placeholder="wireless headphones" required>
+            </div>
+            
+            <button type="submit">Analizuj</button>
+        </form>
+
+        <div class="results" id="results">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analizujemy Twój produkt...</p>
+            </div>
+            
+            <div id="analysis" style="display: none;">
+                <h2>Wyniki analizy</h2>
+                <div id="metrics"></div>
+                <div id="recommendations"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('analyzerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('productUrl').value;
+            const keyword = document.getElementById('keyword').value;
+            
+            runAnalysis(url, keyword);
+        });
+
+        function runAnalysis(url, keyword) {
+            // Show results container
+            document.getElementById('results').classList.add('show');
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('analysis').style.display = 'none';
+
+            // Simulate analysis delay
+            setTimeout(() => {
+                const platform = detectPlatform(url);
+                const analysis = generateAnalysis(platform, keyword, url);
+                
+                displayResults(analysis);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analysis').style.display = 'block';
+            }, 3000);
+        }
+
+        function detectPlatform(url) {
+            if (url.includes('amazon')) return 'Amazon';
+            if (url.includes('ebay')) return 'eBay';
+            if (url.includes('allegro')) return 'Allegro';
+            if (url.includes('etsy')) return 'Etsy';
+            return 'Unknown';
+        }
+
+        function generateAnalysis(platform, keyword, url) {
+            const limits = {
+                'Amazon': { title: 200, images: 9, currency: 'EUR' },
+                'eBay': { title: 80, images: 24, currency: 'EUR' },
+                'Allegro': { title: 50, images: 16, currency: 'PLN' },
+                'Etsy': { title: 140, images: 10, currency: 'EUR' }
+            };
+
+            const limit = limits[platform] || limits['Amazon'];
+            const keywordLength = keyword.length;
+            const estimatedTitleLength = keywordLength * 3 + Math.floor(Math.random() * 40) + 60;
+            const wordCount = keyword.split(' ').length;
+
+            return {
+                platform: platform,
+                keyword: keyword,
+                keywordLength: keywordLength,
+                wordCount: wordCount,
+                estimatedTitleLength: estimatedTitleLength,
+                titleLimit: limit.title,
+                imageLimit: limit.images,
+                currency: limit.currency,
+                estimatedImages: Math.floor(Math.random() * 6) + 3
+            };
+        }
+
+        function displayResults(data) {
+            // Display metrics
+            const metricsHtml = `
+                <div class="metric">
+                    <span><strong>Platforma:</strong></span>
+                    <span>${data.platform}</span>
+                </div>
+                <div class="metric">
+                    <span><strong>Szacowana długość tytułu:</strong></span>
+                    <span>${data.estimatedTitleLength} / ${data.titleLimit} znaków</span>
+                </div>
+                <div class="metric">
+                    <span><strong>Słowa w keyword:</strong></span>
+                    <span>${data.wordCount} słów</span>
+                </div>
+                <div class="metric">
+                    <span><strong>Szacowane zdjęcia:</strong></span>
+                    <span>${data.estimatedImages} / ${data.imageLimit} max</span>
+                </div>
+            `;
+            document.getElementById('metrics').innerHTML = metricsHtml;
+
+            // Generate recommendations
+            const recommendations = [];
+
+            if (data.estimatedTitleLength > data.titleLimit) {
+                recommendations.push({
+                    title: 'Tytuł za długi',
+                    description: `Szacowana długość (${data.estimatedTitleLength} znaków) przekracza limit ${data.platform} (${data.titleLimit} znaków). Skróć tytuł usuwając niepotrzebne słowa.`
+                });
+            } else if (data.estimatedTitleLength < data.titleLimit * 0.6) {
+                recommendations.push({
+                    title: 'Wykorzystaj więcej znaków',
+                    description: `Masz jeszcze ${data.titleLimit - data.estimatedTitleLength} znaków do wykorzystania na ${data.platform}. Dodaj więcej opisowych słów.`
+                });
+            }
+
+            if (data.wordCount === 1) {
+                recommendations.push({
+                    title: 'Rozważ long-tail keyword',
+                    description: 'Używasz tylko jednego słowa. Frazy 2-3 słowa często mają lepszą konwersję.'
+                });
+            }
+
+            if (data.estimatedImages < data.imageLimit * 0.5) {
+                recommendations.push({
+                    title: 'Dodaj więcej zdjęć',
+                    description: `${data.platform} pozwala na ${data.imageLimit} zdjęć. Więcej zdjęć = wyższa konwersja.`
+                });
+            }
+
+            // Platform specific tips
+            if (data.platform === 'Amazon') {
+                recommendations.push({
+                    title: 'Amazon tip',
+                    description: 'Przygotuj 5 bullet points z kluczowymi cechami produktu (każdy do 500 znaków).'
+                });
+            } else if (data.platform === 'Allegro') {
+                recommendations.push({
+                    title: 'Allegro tip',
+                    description: 'Wypełnij wszystkie parametry produktu i rozważ program Smart! dla lepszej widoczności.'
+                });
+            } else if (data.platform === 'eBay') {
+                recommendations.push({
+                    title: 'eBay tip',
+                    description: 'Wykorzystaj długi opis produktu - eBay pozwala na bardzo szczegółowe opisy.'
+                });
+            }
+
+            // Display recommendations
+            const recommendationsHtml = recommendations.map(rec => `
+                <div class="recommendation">
+                    <h3>${rec.title}</h3>
+                    <p>${rec.description}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('recommendations').innerHTML = '<h3>Rekomendacje:</h3>' + recommendationsHtml;
+        }
+    </script>
+</body>
+</html>
